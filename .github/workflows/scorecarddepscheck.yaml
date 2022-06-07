@@ -2,13 +2,15 @@ name: "Scorecard DepsCheck Workflow"
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    
 
 jobs:
-  Explore-GitHub-Actions:
+  Run-Main:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          ./main
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - run: ./main
 
-      
       
