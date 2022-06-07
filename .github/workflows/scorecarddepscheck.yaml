@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          go build main.go
+          go build ./main.go
           ./main
 
       
