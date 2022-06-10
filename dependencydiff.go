@@ -7,8 +7,8 @@ const (
 	Removed ChangeType = "removed"
 )
 
-func (*ChangeType) IsValid(ct ChangeType) bool {
-	switch ct {
+func (ct *ChangeType) IsValid() bool {
+	switch *ct {
 	case Added, Removed:
 		return true
 	default:

@@ -11,6 +11,10 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-      - run: ./main
 
-      
+      - name: Add the GitHub Personal Access Token to the current env
+      - run: export GITHUB_AUTH_TOKEN=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
+
+      - name: Scorecard Dependency Check
+      # - run: ./main ${github.GITHUB_REPOSITORY_OWNER} ${{reponame}} ${GITHUB_AUTH_TOKEN} ${{base}} ${{head}}
+      - run: ./main ossf scorecard ${GITHUB_AUTH_TOKEN} 70d045b9ef00e7171ce3950aca38eef6ea4d7308 4a88dac00fc62a7ccc20ae8d70aea5db39856988

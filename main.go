@@ -34,7 +34,8 @@ func main() {
 		return
 	}
 	defer resp.Body.Close()
-	// fmt.Println(io.ReadAll(resp.Body))
+	// body, _ := io.ReadAll(resp.Body)
+	// fmt.Println(string(body))
 	depDiff := []Dependency{}
 	err = json.NewDecoder(resp.Body).Decode(&depDiff)
 	if err != nil {
@@ -42,7 +43,9 @@ func main() {
 		return
 	}
 	for _, d := range depDiff {
-		fmt.Printf("name: %v \nstatus: %v \nversion: %v \necosys: %v \npkg_url: %v\nsrc_url: %v\n\n",
-			d.ChangeType, d.Name, d.Version, d.Ecosystem, *d.PackageURL, *d.SrcRepoURL)
+		if d.ChangeType.IsValid() {
+			fmt.Printf("name: %v \nstatus: %v \nversion: %v \necosys: %v \npkg_url: %v\nsrc_url: %v\n\n",
+				d.ChangeType, d.Name, d.Version, d.Ecosystem, *d.PackageURL, *d.SrcRepoURL)
+		}
 	}
 }
