@@ -45,7 +45,7 @@ func main() {
 	for _, d := range depDiff {
 		if d.ChangeType.IsValid() {
 			fmt.Printf("name: %v \nstatus: %v \nversion: %v \necosys: %v \npkg_url: %v\nsrc_url: %v\n\n",
-				d.ChangeType, d.Name, d.Version, d.Ecosystem, *d.PackageURL, *d.SrcRepoURL)
+				d.Name, d.ChangeType, d.Version, d.Ecosystem, *d.PackageURL, *d.SrcRepoURL)
 		}
 	}
 }
