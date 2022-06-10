@@ -17,4 +17,4 @@ jobs:
 
       - name: Scorecard Dependency Check
       # - run: ./main ${github.GITHUB_REPOSITORY_OWNER} ${{reponame}} ${GITHUB_AUTH_TOKEN} ${{base}} ${{head}}
-      - run: ./ScorecardDepsCheck ossf scorecard ${GITHUB_AUTH_TOKEN} 70d045b9ef00e7171ce3950aca38eef6ea4d7308 4a88dac00fc62a7ccc20ae8d70aea5db39856988
+      - run: ./ScorecardDepsCheck ossf scorecard ${{secrets.GITHUB_TOKEN}} 70d045b9ef00e7171ce3950aca38eef6ea4d7308 4a88dac00fc62a7ccc20ae8d70aea5db39856988
