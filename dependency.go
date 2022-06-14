@@ -1,4 +1,4 @@
-package main
+package scorecarddepscheck
 
 type ChangeType string
 
@@ -28,5 +28,5 @@ type Dependency struct {
 	License    *string `json:"license"`
 	SrcRepoURL *string `json:"source_repository_url"`
 
-	Vulnerabilities []string `json:"vulnerabilities"`
+	Vulnerabilities []Vulnerability `json:"vulnerabilities"`
 }
