@@ -22,29 +22,29 @@ type Dependency struct {
 	IsDirect bool
 
 	// ChangeType indicates whether the dependency is added or removed.
-	ChangeType *ChangeType `json:"change_type"`
+	ChangeType ChangeType `json:"change_type"`
 
 	// ManifestFileName is the name of the manifest file of the dependency, such as go.mod for Go.
-	ManifestFileName *string `json:"manifest"`
+	ManifestFileName string `json:"manifest"`
 
 	// Ecosystem is the name of the package management system, such as NPM, GO, PYPI.
-	Ecosystem string `json:"ecosystem"`
+	Ecosystem string `json:"ecosystem" bigquery:"System"`
 
 	// Name is the name of the dependency.
-	Name string `json:"name"`
+	Name string `json:"name" bigquery:"Name"`
 
 	// Version is the package version of the dependency.
 	// Version version.Version `json:"version"`
-	Version string `json:"version"`
+	Version string `json:"version" bigquery:"Version"`
 
 	// Package URL is a short link for a package.
-	PackageURL *string `json:"package_url"`
+	PackageURL string `json:"package_url"`
 
 	// License is ...
-	License *string `json:"license"`
+	License string `json:"license"`
 
 	// SrcRepoURL is the source repository URL of the dependency.
-	SrcRepoURL *string `json:"source_repository_url"`
+	SrcRepoURL string `json:"source_repository_url"`
 
 	// Vulnerabilities is a list of Vulnerability.
 	Vulnerabilities []Vulnerability `json:"vulnerabilities"`
