@@ -34,7 +34,6 @@ type Dependency struct {
 	Name string `json:"name" bigquery:"Name"`
 
 	// Version is the package version of the dependency.
-	// Version version.Version `json:"version"`
 	Version string `json:"version" bigquery:"Version"`
 
 	// Package URL is a short link for a package.
@@ -47,7 +46,7 @@ type Dependency struct {
 	SrcRepoURL string `json:"source_repository_url"`
 
 	// Vulnerabilities is a list of Vulnerability.
-	Vulnerabilities []Vulnerability `json:"vulnerabilities"`
+	Vulnerabilities []Vulnerability
 
 	// Dependencies are the dependencies of the dependency, i.e. indirect dependencies.
 	Dependencies []Dependency
