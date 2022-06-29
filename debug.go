@@ -54,7 +54,6 @@ func PrintDependencyChangeInfo(deps []query.Dependency) {
 			removed[d.Name] = d
 		}
 	}
-	fmt.Println("\n> Fetching dependency changes...")
 	for dName, d := range added {
 		if v, ok := removed[dName]; ok {
 			fmt.Printf(
