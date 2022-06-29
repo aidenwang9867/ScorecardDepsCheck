@@ -1,8 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"path"
 
-func PrintDependencyToStdOut(d Dependency) {
+	"github.com/aidenwang9867/scorecard-bigquery-auth/app/query"
+)
+
+func PrintDependencyToStdOut(d query.Dependency) {
 	result := ""
 	if d.IsDirect {
 		result += fmt.Sprintf("name: %v \nstatus: %v \nversion: %v \necosys: %v \n",
@@ -37,4 +42,49 @@ func PrintDependencyToStdOut(d Dependency) {
 		}
 	}
 	fmt.Println(result)
+}
+
+func PrintDependencyChangeInfo(deps []query.Dependency) {
+	removed, added := map[string]query.Dependency{}, map[string]query.Dependency{}
+	for _, d := range deps {
+		switch d.ChangeType {
+		case query.Added:
+			added[d.Name] = d
+		case query.Removed:
+			removed[d.Name] = d
+		}
+	}
+	fmt.Println("\n> Fetching dependency changes...")
+	for dName, d := range added {
+		if v, ok := removed[dName]; ok {
+			fmt.Printf(
+				"[Dependency updated] %s@%s (old) --> %s@%s (new)\n",
+				v.Name, v.Version,
+				d.Name, d.Version,
+			)
+		} else {
+			fmt.Printf(
+				"[Dependency added] %s@%s\n",
+				d.Name, d.Version,
+			)
+		}
+		if len(d.Vulnerabilities) != 0 {
+			srcURL := path.Join("deps.dev", d.Ecosystem, d.Name, d.Version)
+			fmt.Printf(
+				"Vulnerabilties found in %s@%s, see [%s] for further information\n\n",
+				d.Name, d.Version,
+				srcURL,
+			)
+		}
+	}
+	for dName, d := range removed {
+		if _, ok := added[dName]; ok {
+			continue
+		} else {
+			fmt.Printf(
+				"[Dependency removed] %s@%s\n",
+				d.Name, d.Version,
+			)
+		}
+	}
 }
