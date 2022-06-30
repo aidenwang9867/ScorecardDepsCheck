@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"DependencyDiffVisualizationInAction/depsdiff"
+	"github.com/aidenwang9867/DependencyDiffVisualizationInAction/depsdiff"
 )
 
 func main() {
