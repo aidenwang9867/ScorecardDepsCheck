@@ -1,8 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"path"
 
-func PrintDependencyToStdOut(d Dependency) {
+	"github.com/aidenwang9867/scorecard-bigquery-auth/app/query"
+)
+
+func PrintDependencyToStdOut(d query.Dependency) {
 	result := ""
 	if d.IsDirect {
 		result += fmt.Sprintf("name: %v \nstatus: %v \nversion: %v \necosys: %v \n",
@@ -37,4 +42,76 @@ func PrintDependencyToStdOut(d Dependency) {
 		}
 	}
 	fmt.Println(result)
+}
+
+func PrintDependencyChangeInfo(deps []query.Dependency) {
+	removed, added := map[string]query.Dependency{}, map[string]query.Dependency{}
+	for _, d := range deps {
+		switch d.ChangeType {
+		case query.Added:
+			added[d.Name] = d
+		case query.Removed:
+			removed[d.Name] = d
+		}
+	}
+
+	results := ""
+	updated := map[string]query.Dependency{}
+	for dName, d := range added {
+		if _, ok := removed[dName]; ok {
+			updated[dName] = d
+		} else {
+			current := fmt.Sprintf("**`" + "added" + "`** ")
+			if len(d.Vulnerabilities) != 1 {
+				current += fmt.Sprintf(createVulnAlert(d))
+			}
+			current += fmt.Sprintf(
+				"%s: %s @ %s",
+				d.Ecosystem, d.Name, d.Version,
+			)
+			results += current + "\n\n"
+		}
+	}
+	for dName, d := range updated {
+		current := fmt.Sprintf(
+			"**`" + "updated" + "`**")
+		if len(d.Vulnerabilities) != 1 {
+			current += fmt.Sprintf(createVulnAlert(d))
+		}
+		current += fmt.Sprintf(
+			" %s: %s @ %s (**old**) :arrow_right: %s @ %s @ %s (**new**)",
+			added[dName].Ecosystem, added[dName].Name, added[dName].Version,
+			d.Ecosystem, d.Name, d.Version,
+		)
+		results += current + "\n\n"
+	}
+	for dName, d := range removed {
+		if _, ok := added[dName]; !ok {
+			current := fmt.Sprintf(
+				"~~**`"+"removed"+"`**~~"+" %s: %s @ %s",
+				d.Ecosystem, d.Name, d.Version,
+			)
+			results += current + "\n\n"
+		}
+	}
+
+	if results == "" {
+		fmt.Println("No dependency changes")
+	} else {
+		fmt.Println(results)
+	}
+}
+
+func createVulnAlert(d query.Dependency) string {
+	system, name, version := "", d.Name, d.Version
+	if d.Ecosystem == "gomod" {
+		system = "go"
+	} else if d.Ecosystem == "pip" {
+		system = "pypi"
+	}
+	result := fmt.Sprintf(
+		"[**`"+"vulnerable"+"`**](%s) ",
+		"https://deps.dev/"+path.Join(system, name, version),
+	)
+	return result
 }

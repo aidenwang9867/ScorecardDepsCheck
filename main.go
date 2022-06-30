@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -23,65 +26,42 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	// Retrieve dependencies of direct dependencies, i.e. indirect dependencies.
-	fmt.Println("> Retrieving dependencies of direct dependencies (indirect dependencies)...")
-	for i := range directDeps {
-		if directDeps[i].ChangeType == "removed" {
-			continue
-		}
-		indirectDeps, err := GetDependenciesOfDependencyBySystemNameVersion(
-			directDeps[i].Ecosystem,
-			directDeps[i].Name,
-			directDeps[i].Version,
-		)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		directDeps[i].Dependencies = indirectDeps
+	PrintDependencyChangeInfo(directDeps)
+
+}
+
+func GetDiffFromCommits(authToken, repoOwner string, repoName string,
+	base string, head string) ([]structs.Dependency, error) {
+	reqURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/dependency-graph/compare/%s...%s",
+		repoOwner, repoName, base, head)
+	req, err := http.NewRequest("GET", reqURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("generate request error: %w", err)
+
 	}
+	// To specify the returned type to be JSON so that it's easier to parse.
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	// An access token is required in the request header to be able to use this API.
+	req.Header.Set("Authorization", "token "+authToken)
 
-	// Retrieve vulnerabilities by traversing all dependencies.
-	// Since we only have (1) direct dependencies and (2) one layer of indirect dependencies,
-	// two iterations here are enough to traverse over all nodes.
-	// This might be a graph traversal in the future if more indirect dependency layers are added.
-	fmt.Println("> Retrieving vulnerabilities from BQ")
-	for i, d := range directDeps {
-		// Skip removed dependencies, only focus on added dependencies.
-		if d.ChangeType == "removed" {
-			continue
-		}
-		vuln, err := GetVulnerabilitiesBySystemNameVersion(d.Ecosystem, d.Name, d.Version)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		directDeps[i].Vulnerabilities = append(directDeps[i].Vulnerabilities, vuln...)
+	// Set a ten-seconds timeout to make sure the client can be created correctly.
+	myClient := &http.Client{Timeout: 10 * time.Second}
+	resp, err := myClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("get response error: %w", err)
+	}
+	defer resp.Body.Close()
 
-		// Handle vulnerabilities in indirect dependencies.
-		for j, dd := range directDeps[i].Dependencies {
-			v, err := GetVulnerabilitiesBySystemNameVersion(dd.Ecosystem, dd.Name, dd.Version)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			directDeps[i].Dependencies[j].Vulnerabilities = append(
-				directDeps[i].Dependencies[j].Vulnerabilities,
-				v...,
-			)
-			if len(directDeps[i].Dependencies[j].Vulnerabilities) != 0 {
-				fmt.Printf("Vulnerbaility found in indirect dependency %s\n", dd.Name)
-				PrintDependencyToStdOut(directDeps[i].Dependencies[j])
-			} else {
-				fmt.Printf("indirect dependency %s is vulnerability-free\n", dd.Name)
-			}
-		}
-
-		if len(directDeps[i].Vulnerabilities) != 0 {
-			fmt.Printf("Vulnerbaility found in direct dependency %s\n", d.Name)
-			PrintDependencyToStdOut(directDeps[i])
-		} else {
-			fmt.Printf("direct dependency %s is vulnerability-free\n", d.Name)
+	depDiff := []structs.Dependency{}
+	err = json.NewDecoder(resp.Body).Decode(&depDiff)
+	if err != nil {
+		return nil, fmt.Errorf("parse response error: %w", err)
+	}
+	for i := range depDiff {
+		depDiff[i].IsDirect = true
+		if depDiff[i].Ecosystem == "pip" {
+			depDiff[i].Ecosystem = "pypi"
 		}
 	}
+	return depDiff, nil
 }
