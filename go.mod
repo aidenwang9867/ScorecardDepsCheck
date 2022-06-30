@@ -1,4 +1,4 @@
-module DependencyDiffVisualizationInAction
+module github.com/aidenwang9867/DependencyDiffVisualizationInAction
 
 go 1.18
 
