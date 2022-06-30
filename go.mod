@@ -2,11 +2,13 @@ module DependencyDiffVisualizationInAction
 
 go 1.18
 
-require github.com/aidenwang9867/scorecard-bigquery-auth v0.0.0-20220628232400-954f0df0a5cf
+require (
+	cloud.google.com/go/bigquery v1.34.1
+	github.com/aidenwang9867/scorecard-bigquery-auth v0.0.0-20220628232400-954f0df0a5cf
+)
 
 require (
 	cloud.google.com/go v0.102.1 // indirect
-	cloud.google.com/go/bigquery v1.34.1 // indirect
 	cloud.google.com/go/compute v1.7.0 // indirect
 	cloud.google.com/go/iam v0.3.0 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect

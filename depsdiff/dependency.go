@@ -1,4 +1,4 @@
-package structs
+package depsdiff
 
 type ChangeType string
 

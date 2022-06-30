@@ -1,13 +1,11 @@
-package main
+package depsdiff
 
 import (
 	"fmt"
 	"path"
-
-	"github.com/aidenwang9867/scorecard-bigquery-auth/app/query"
 )
 
-func PrintDependencyToStdOut(d query.Dependency) {
+func PrintDependencyToStdOut(d Dependency) {
 	result := ""
 	if d.IsDirect {
 		result += fmt.Sprintf("name: %v \nstatus: %v \nversion: %v \necosys: %v \n",
@@ -44,26 +42,26 @@ func PrintDependencyToStdOut(d query.Dependency) {
 	fmt.Println(result)
 }
 
-func PrintDependencyChangeInfo(deps []query.Dependency) {
-	removed, added := map[string]query.Dependency{}, map[string]query.Dependency{}
+func PrintDependencyChangeInfo(deps []Dependency) {
+	removed, added := map[string]Dependency{}, map[string]Dependency{}
 	for _, d := range deps {
 		switch d.ChangeType {
-		case query.Added:
+		case Added:
 			added[d.Name] = d
-		case query.Removed:
+		case Removed:
 			removed[d.Name] = d
 		}
 	}
 
 	results := ""
-	updated := map[string]query.Dependency{}
+	updated := map[string]Dependency{}
 	for dName, d := range added {
 		if _, ok := removed[dName]; ok {
 			updated[dName] = d
 		} else {
 			current := fmt.Sprintf("**`" + "added" + "`** ")
 			if len(d.Vulnerabilities) != 1 {
-				current += fmt.Sprintf(createVulnAlert(d))
+				current += fmt.Sprintf(createVulnTag(d))
 			}
 			current += fmt.Sprintf(
 				"%s: %s @ %s",
@@ -76,7 +74,7 @@ func PrintDependencyChangeInfo(deps []query.Dependency) {
 		current := fmt.Sprintf(
 			"**`" + "updated" + "`**")
 		if len(d.Vulnerabilities) != 1 {
-			current += fmt.Sprintf(createVulnAlert(d))
+			current += fmt.Sprintf(createVulnTag(d))
 		}
 		current += fmt.Sprintf(
 			" %s: %s @ %s (**old**) :arrow_right: %s @ %s @ %s (**new**)",
@@ -102,7 +100,7 @@ func PrintDependencyChangeInfo(deps []query.Dependency) {
 	}
 }
 
-func createVulnAlert(d query.Dependency) string {
+func createVulnTag(d Dependency) string {
 	system, name, version := "", d.Name, d.Version
 	if d.Ecosystem == "gomod" {
 		system = "go"

@@ -26,12 +26,12 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	PrintDependencyChangeInfo(directDeps)
+	depsdiff.PrintDependencyChangeInfo(directDeps)
 
 }
 
 func GetDiffFromCommits(authToken, repoOwner string, repoName string,
-	base string, head string) ([]structs.Dependency, error) {
+	base string, head string) ([]Dependency, error) {
 	reqURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/dependency-graph/compare/%s...%s",
 		repoOwner, repoName, base, head)
 	req, err := http.NewRequest("GET", reqURL, nil)
