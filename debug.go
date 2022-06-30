@@ -54,36 +54,64 @@ func PrintDependencyChangeInfo(deps []query.Dependency) {
 			removed[d.Name] = d
 		}
 	}
+
+	results := ""
+	updated := map[string]query.Dependency{}
 	for dName, d := range added {
-		if v, ok := removed[dName]; ok {
-			fmt.Printf(
-				"[Dependency updated] %s@%s (old) --> %s@%s (new)\n",
-				v.Name, v.Version,
-				d.Name, d.Version,
-			)
+		if _, ok := removed[dName]; ok {
+			updated[dName] = d
 		} else {
-			fmt.Printf(
-				"[Dependency added] %s@%s\n",
-				d.Name, d.Version,
+			current := fmt.Sprintf("**`" + "added" + "`** ")
+			if len(d.Vulnerabilities) != 1 {
+				current += fmt.Sprintf(createVulnAlert(d))
+			}
+			current += fmt.Sprintf(
+				"%s: %s @ %s",
+				d.Ecosystem, d.Name, d.Version,
 			)
+			results += current + "\n\n"
 		}
-		if len(d.Vulnerabilities) != 0 {
-			srcURL := path.Join("deps.dev", d.Ecosystem, d.Name, d.Version)
-			fmt.Printf(
-				"Vulnerabilties found in %s@%s, see [%s] for further information\n\n",
-				d.Name, d.Version,
-				srcURL,
-			)
+	}
+	for dName, d := range updated {
+		current := fmt.Sprintf(
+			"**`" + "updated" + "`**")
+		if len(d.Vulnerabilities) != 1 {
+			current += fmt.Sprintf(createVulnAlert(d))
 		}
+		current += fmt.Sprintf(
+			" %s: %s @ %s (**old**) :arrow_right: %s @ %s @ %s (**new**)",
+			added[dName].Ecosystem, added[dName].Name, added[dName].Version,
+			d.Ecosystem, d.Name, d.Version,
+		)
+		results += current + "\n\n"
 	}
 	for dName, d := range removed {
-		if _, ok := added[dName]; ok {
-			continue
-		} else {
-			fmt.Printf(
-				"[Dependency removed] %s@%s\n",
-				d.Name, d.Version,
+		if _, ok := added[dName]; !ok {
+			current := fmt.Sprintf(
+				"~~**`"+"removed"+"`**~~"+" %s: %s @ %s",
+				d.Ecosystem, d.Name, d.Version,
 			)
+			results += current + "\n\n"
 		}
 	}
+
+	if results == "" {
+		fmt.Println("No dependency changes")
+	} else {
+		fmt.Println(results)
+	}
+}
+
+func createVulnAlert(d query.Dependency) string {
+	system, name, version := "", d.Name, d.Version
+	if d.Ecosystem == "gomod" {
+		system = "go"
+	} else if d.Ecosystem == "pip" {
+		system = "pypi"
+	}
+	result := fmt.Sprintf(
+		"[**`"+"vulnerable"+"`**](%s) ",
+		"https://deps.dev/"+path.Join(system, name, version),
+	)
+	return result
 }
