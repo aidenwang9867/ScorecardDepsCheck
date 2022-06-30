@@ -1,2 +1,2 @@
 # DependencyDiffVisualizationInAction
-This is the testing repo for the Scorecard feature descripbed here
+This is the testing repo for the [new Scorecard feature](https://github.com/ossf/scorecard/issues/2008).
