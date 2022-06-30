@@ -2,7 +2,6 @@ package depsdiff
 
 import (
 	"fmt"
-	"path"
 )
 
 func PrintDependencyToStdOut(d Dependency) {
@@ -101,15 +100,9 @@ func PrintDependencyChangeInfo(deps []Dependency) {
 }
 
 func createVulnTag(d Dependency) string {
-	system, name, version := "", d.Name, d.Version
-	if d.Ecosystem == "gomod" {
-		system = "go"
-	} else if d.Ecosystem == "pip" {
-		system = "pypi"
-	}
 	result := fmt.Sprintf(
 		"[**`"+"vulnerable"+"`**](%s) ",
-		"https://deps.dev/"+path.Join(system, name, version),
+		d.SrcRepoURL,
 	)
 	return result
 }
