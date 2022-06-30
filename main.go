@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"DependencyDiffVisualizationInAction/depsdiff"
 )
 
 func main() {
@@ -31,7 +33,7 @@ func main() {
 }
 
 func GetDiffFromCommits(authToken, repoOwner string, repoName string,
-	base string, head string) ([]Dependency, error) {
+	base string, head string) ([]depsdiff.Dependency, error) {
 	reqURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/dependency-graph/compare/%s...%s",
 		repoOwner, repoName, base, head)
 	req, err := http.NewRequest("GET", reqURL, nil)
@@ -52,7 +54,7 @@ func GetDiffFromCommits(authToken, repoOwner string, repoName string,
 	}
 	defer resp.Body.Close()
 
-	depDiff := []structs.Dependency{}
+	depDiff := []depsdiff.Dependency{}
 	err = json.NewDecoder(resp.Body).Decode(&depDiff)
 	if err != nil {
 		return nil, fmt.Errorf("parse response error: %w", err)
