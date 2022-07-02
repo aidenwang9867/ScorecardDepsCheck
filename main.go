@@ -32,6 +32,7 @@ func main() {
 
 }
 
+// Get depednency-diff using the GH API
 func GetDiffFromCommits(authToken, repoOwner string, repoName string,
 	base string, head string) ([]depsdiff.Dependency, error) {
 	reqURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/dependency-graph/compare/%s...%s",
