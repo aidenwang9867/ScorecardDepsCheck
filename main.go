@@ -40,7 +40,7 @@ func main() {
 // (https://docs.github.com/en/rest/dependency-graph/dependency-review) API
 func GetDepDiffByCommitsSHA(authToken, repoOwner string, repoName string,
 	base string, head string) ([]depdiff.Dependency, error) {
-	client := gogh.Client{}
+	client := gogh.NewClient(http.DefaultClient)
 	reqURL := path.Join(
 		"repos", repoOwner, repoName, "dependency-graph", "compare", base+"..."+head,
 	)
