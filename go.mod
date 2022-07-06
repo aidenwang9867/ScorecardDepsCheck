@@ -2,7 +2,10 @@ module github.com/aidenwang9867/DependencyDiffVisualizationInAction
 
 go 1.18
 
-require cloud.google.com/go/bigquery v1.34.1
+require (
+	cloud.google.com/go/bigquery v1.34.1
+	github.com/google/go-github/v38 v38.1.0
+)
 
 require (
 	cloud.google.com/go v0.102.1 // indirect
@@ -11,10 +14,12 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
+	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.1.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.4.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
 	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2 // indirect
 	golang.org/x/sys v0.0.0-20220624220833-87e55d714810 // indirect

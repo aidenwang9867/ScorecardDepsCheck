@@ -1,9 +1,10 @@
-package depsdiff
+package depdiff
 
 type ChangeType string
 
 const (
 	Added   ChangeType = "added"
+	Updated ChangeType = "updated"
 	Removed ChangeType = "removed"
 )
 
