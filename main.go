@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"path"
 	"time"
 
@@ -16,20 +17,20 @@ func main() {
 	// Args should include:
 	// (0) owner name, (1) repo name,
 	// (2) GitHub Access Token, (3) base commit SHA, (4) head commit SHA.
-	ownerName := "ossf"
-	repoName := "allstar"
-	pat := "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"
-	base := "c1e3869cc9ae93775549d5583994ba7f89761964"
-	head := "65db129afcbb986e0e3ec4156333892a67594d76"
+	args := os.Args[1:]
+	if len(args) != 5 {
+		fmt.Println("len of args not equals to 5")
+		return
+	}
 
 	// Get direct dependenies with change types (e.g. added/removed) using the GitHub Dependency Review REST API
 	// on the two specified code commits.
-	deps, err := GetDepDiffByCommitsSHA(pat, ownerName, repoName, base, head)
+	directDeps, err := GetDepDiffByCommitsSHA(args[2], args[0], args[1], args[3], args[4])
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	md := depdiff.SprintDependencyDiffToMarkDown(deps)
+	md := depdiff.SprintDependencyDiffToMarkDown(directDeps)
 	fmt.Println(md)
 
 }
