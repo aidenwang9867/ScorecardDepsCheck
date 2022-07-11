@@ -23,44 +23,64 @@ func main() {
 		return
 	}
 
-	// Get direct dependenies with change types (e.g. added/removed) using the GitHub Dependency Review REST API
-	// on the two specified code commits.
-	directDeps, err := GetDepDiffByCommitsSHA(args[2], args[0], args[1], args[3], args[4])
+	ctx := depdiff.DepDiffContext{
+		OwnerName:   args[0],
+		RepoName:    args[1],
+		BaseSHA:     args[3],
+		HeadSHA:     args[4],
+		AccessToken: args[2],
+	}
+
+	// Fetch dependency diffs using the GitHub Dependency Review API.
+	deps, err := FetchDependencyDiffData(ctx)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	md := depdiff.SprintDependencyDiffToMarkDown(directDeps)
-	fmt.Println(md)
-
+	// PrintDependencies(deps)
+	results_0, _ := depdiff.GetDependencyScorecardResults(deps[0])
+	fmt.Println(*results_0)
 }
 
-// Get the depednency-diff using the GitHub Dependency Review
-// (https://docs.github.com/en/rest/dependency-graph/dependency-review) API
-func GetDepDiffByCommitsSHA(authToken, repoOwner string, repoName string,
-	base string, head string) ([]depdiff.Dependency, error) {
+// Get the depednency-diffs between two specified code commits.
+func FetchDependencyDiffData(ctx depdiff.DepDiffContext) ([]depdiff.Dependency, error) {
+	// Currently, the GitHub Dependency Review
+	// (https://docs.github.com/en/rest/dependency-graph/dependency-review) API is used.
 	// Set a ten-seconds timeout to make sure the client can be created correctly.
 	client := gogh.NewClient(&http.Client{Timeout: 10 * time.Second})
 	reqURL := path.Join(
-		"repos", repoOwner, repoName, "dependency-graph", "compare", base+"..."+head,
+		"repos", ctx.OwnerName, ctx.RepoName, "dependency-graph", "compare",
+		ctx.BaseSHA+"..."+ctx.HeadSHA,
 	)
 	req, err := client.NewRequest("GET", reqURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("request for dependency-diff failed with %w", err)
-
 	}
-	// To specify the return type to be JSON.
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 	// An access token is required in the request header to be able to use this API.
-	req.Header.Set("Authorization", "token "+authToken)
+	req.Header.Set("Authorization", "token "+ctx.AccessToken)
 
 	depDiff := []depdiff.Dependency{}
 	_, err = client.Do(req.Context(), req, &depDiff)
 	if err != nil {
 		return nil, fmt.Errorf("get response error: %w", err)
 	}
-	for i := range depDiff {
-		depDiff[i].IsDirect = true
-	}
 	return depDiff, nil
+}
+
+func PrintDependencies(deps []depdiff.Dependency) {
+	for _, d := range deps {
+		fmt.Println(*d.Ecosystem, *d.Name, *d.Version, *d.ChangeType)
+		if d.PackageURL != nil && *d.PackageURL != "" {
+			fmt.Println(*d.PackageURL)
+		} else {
+			fmt.Println("empty package url")
+		}
+		if d.SrcRepoURL != nil && *d.SrcRepoURL != "" {
+			fmt.Println(*d.SrcRepoURL)
+		} else {
+			fmt.Println("empty src url")
+		}
+		fmt.Println("===================")
+	}
 }
