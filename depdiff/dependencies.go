@@ -1,4 +1,4 @@
-package raw
+package depdiff
 
 // ChangeType is the change type (added, updated, removed) of a dependency.
 type ChangeType string
