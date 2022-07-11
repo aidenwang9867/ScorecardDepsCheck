@@ -37,9 +37,9 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	// PrintDependencies(deps)
-	results_0, _ := depdiff.GetDependencyScorecardResults(deps[0])
-	fmt.Println(*results_0)
+	PrintDependencies(deps)
+	// results_0, _ := depdiff.GetDependencyScorecardResults(deps[0])
+	// fmt.Println(*results_0)
 }
 
 // Get the depednency-diffs between two specified code commits.
@@ -70,7 +70,7 @@ func FetchDependencyDiffData(ctx depdiff.DepDiffContext) ([]depdiff.Dependency, 
 
 func PrintDependencies(deps []depdiff.Dependency) {
 	for _, d := range deps {
-		fmt.Println(*d.Ecosystem, *d.Name, *d.Version, *d.ChangeType)
+		fmt.Println(*d.Ecosystem, d.Name, *d.Version, *d.ChangeType)
 		if d.PackageURL != nil && *d.PackageURL != "" {
 			fmt.Println(*d.PackageURL)
 		} else {
@@ -81,6 +81,6 @@ func PrintDependencies(deps []depdiff.Dependency) {
 		} else {
 			fmt.Println("empty src url")
 		}
-		fmt.Println("===================")
+		fmt.Printf("===================\n\n")
 	}
 }
