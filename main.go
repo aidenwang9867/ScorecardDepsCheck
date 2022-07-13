@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aidenwang9867/DependencyDiffVisualizationInAction/depdiff"
+	"github.com/aidenwang9867/DependencyDiffVisualizationInAction/pkg"
 )
 
 func main() {
@@ -20,20 +20,17 @@ func main() {
 	}
 	owner, repo, base, head := args[0], args[1], args[2], args[3]
 	//Fetch dependency diffs using the GitHub Dependency Review API.
-	results, err := GetDependencyDiff(owner, repo, base, head)
+	results, err := GetDependencyDiffResults(owner, repo, base, head)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	fmt.Println(results[0].Name, *results[0].Version)
 	fmt.Println(*results[0].ScorecardResults)
 }
 
-func GetDependencyDiff(owner, repo, base, head string) ([]depdiff.DependencyCheckResult, error) {
+func GetDependencyDiffResults(ownerName, repoName, baseSHA, headSHA string) ([]pkg.DependencyCheckResult, error) {
 	ctx := context.Background()
 	// Fetch dependency diffs using the GitHub Dependency Review API.
-	deps, err := depdiff.FetchRawDependencyDiffData(ctx, owner, repo, base, head)
-	if err != nil {
-		return nil, fmt.Errorf("error fetching dependency changes: %w", err)
-	}
-	return deps, nil
+	return fetchRawDependencyDiffData(ctx, ownerName, repoName, baseSHA, headSHA)
 }
