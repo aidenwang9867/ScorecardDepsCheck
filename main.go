@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+
+	"github.com/aidenwang9867/DependencyDiffVisualizationInAction/depdiff"
 )
 
 func main() {
@@ -15,14 +18,22 @@ func main() {
 		fmt.Println("len of args not equals to 4")
 		return
 	}
-
-	// Fetch dependency diffs using the GitHub Dependency Review API.
-	deps, err := FetchDependencyDiffData(args[0], args[1], args[2], args[3])
+	owner, repo, base, head := args[0], args[1], args[2], args[3]
+	//Fetch dependency diffs using the GitHub Dependency Review API.
+	results, err := GetDependencyDiff(owner, repo, base, head)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	PrintDependencies(deps)
-	// results_0, _ := depdiff.GetDependencyScorecardResults(deps[0])
-	// fmt.Println(*results_0)
+	fmt.Println(*results[0].ScorecardResults)
+}
+
+func GetDependencyDiff(owner, repo, base, head string) ([]depdiff.DependencyCheckResult, error) {
+	ctx := context.Background()
+	// Fetch dependency diffs using the GitHub Dependency Review API.
+	deps, err := depdiff.FetchRawDependencyDiffData(ctx, owner, repo, base, head)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching dependency changes: %w", err)
+	}
+	return deps, nil
 }

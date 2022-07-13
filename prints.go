@@ -2,11 +2,9 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/aidenwang9867/DependencyDiffVisualizationInAction/depdiff"
 )
 
-func PrintDependencies(deps []depdiff.Dependency) {
+func PrintDependencies(deps []dependency) {
 	for _, d := range deps {
 		fmt.Println(*d.Ecosystem, d.Name, *d.Version, *d.ChangeType)
 		if d.PackageURL != nil && *d.PackageURL != "" {
