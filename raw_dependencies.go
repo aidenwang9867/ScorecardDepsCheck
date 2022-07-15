@@ -15,7 +15,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"path"
@@ -24,7 +23,6 @@ import (
 	"github.com/google/go-github/v38/github"
 
 	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
-	"github.com/ossf/scorecard/v4/log"
 )
 
 // dependency is a raw dependency fetched from the GitHub Dependency Review API.
@@ -54,30 +52,21 @@ type dependency struct {
 
 // fetchRawDependencyDiffData fetches the dependency-diffs between the two code commits
 // using the GitHub Dependency Review API, and returns a slice of DependencyCheckResult.
-func fetchRawDependencyDiffData(
-	ctx context.Context,
-	owner, repo, base, head string,
-	checkNamesToRun []string,
-	logger *log.Logger) ([]dependency, error) {
-
-	ghrt := roundtripper.NewTransport(ctx, logger)
-	ghClient := github.NewClient(
-		&http.Client{
-			Transport: ghrt,
-		},
-	)
+func fetchRawDependencyDiffData(dCtx *dependencydiffContext) error {
+	ghrt := roundtripper.NewTransport(dCtx.ctx, dCtx.logger)
+	ghClient := github.NewClient(&http.Client{Transport: ghrt})
 	req, err := ghClient.NewRequest(
 		"GET",
-		path.Join("repos", owner, repo, "dependency-graph", "compare", base+"..."+head),
+		path.Join("repos", dCtx.ownerName, dCtx.repoName,
+			"dependency-graph", "compare", dCtx.baseSHA+"..."+dCtx.headSHA),
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("request for dependency-diff failed with %w", err)
+		return fmt.Errorf("request for dependency-diff failed with %w", err)
 	}
-	deps := []dependency{}
-	_, err = ghClient.Do(ctx, req, &deps)
+	_, err = ghClient.Do(dCtx.ctx, req, &dCtx.dependencydiffs)
 	if err != nil {
-		return nil, fmt.Errorf("error receiving the http reponse: %w", err)
+		return fmt.Errorf("error parsing the dependency-diff reponse: %w", err)
 	}
-	return deps, nil
+	return nil
 }
