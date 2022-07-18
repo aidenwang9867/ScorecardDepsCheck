@@ -22,8 +22,8 @@ func main() {
 	owner, repo, base, head := args[0], args[1], args[2], args[3]
 	//Fetch dependency diffs using the GitHub Dependency Review API.
 	checksToRun := []string{
-		checks.CheckCodeReview,
-		checks.CheckSAST,
+		// checks.CheckCodeReview,
+		// checks.CheckSAST,
 		checks.CheckBranchProtection,
 	}
 	changeTypeToCheck := map[pkg.ChangeType]bool{
@@ -38,10 +38,11 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+	// fmt.Println(results)
 	markdown, err := SprintDependencyChecksToMarkdown(results)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(markdown)
+	fmt.Println(*markdown)
 }

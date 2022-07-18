@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/aidenwang9867/depdiffvis/pkg"
+	"github.com/ossf/scorecard/v4/checker"
 	docs "github.com/ossf/scorecard/v4/docs/checks"
 )
 
@@ -30,9 +31,9 @@ func PrintDependencies(deps []dependency) {
 	}
 }
 
-func SprintDependencyChecksToMarkdown(dChecks []pkg.DependencyCheckResult) (string, error) {
+func SprintDependencyChecksToMarkdown(dChecks []pkg.DependencyCheckResult) (*string, error) {
+	// Use maps to reduce lookup times. Use pointers as values to save space.
 	added := map[string]*pkg.DependencyCheckResult{}
-	updated := map[string]*pkg.DependencyCheckResult{}
 	removed := map[string]*pkg.DependencyCheckResult{}
 	for _, d := range dChecks {
 		if d.ChangeType != nil {
@@ -43,106 +44,109 @@ func SprintDependencyChecksToMarkdown(dChecks []pkg.DependencyCheckResult) (stri
 				removed[d.Name] = &d
 			}
 			// The current data source GitHub Dependency Review won't give the updated dependencies,
-			// so we need to find them out manually by checking the added/removed maps.
-		}
-	}
-	for dName := range added {
-		if removed[dName] != nil {
-			// If the dependency check result in the added map is also in the removed map
-			// (removing the old version and adding the new version), move it to the updated map.
-			updated[dName] = added[dName]
-			added[dName] = nil // Remove it from the added map.
-			// Will need its old package info in the removed map, so don't remove it from the removed map.
+			// so we need to find them manually by checking the added/removed maps.
 		}
 	}
 	// Sort dependencies by their aggregate scores in descending orders.
 	addedSortKeys, err := getDependencySortKeys(added)
 	if err != nil {
-		return "", err
-	}
-	updatedSortKeys, err := getDependencySortKeys(updated)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 	removedSortKeys, err := getDependencySortKeys(removed)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	sort.SliceStable(
 		addedSortKeys,
 		func(i, j int) bool { return addedSortKeys[i].aggregateScore > addedSortKeys[j].aggregateScore },
 	)
 	sort.SliceStable(
-		updatedSortKeys,
-		func(i, j int) bool { return updatedSortKeys[i].aggregateScore > updatedSortKeys[j].aggregateScore },
-	)
-	sort.SliceStable(
 		removedSortKeys,
 		func(i, j int) bool { return removedSortKeys[i].aggregateScore > removedSortKeys[j].aggregateScore },
 	)
-
 	results := ""
 	for _, key := range addedSortKeys {
 		dName := key.dependencyName
-		current := fmt.Sprintf("**`" + "added" + "`** ")
-		current += fmt.Sprintf(
-			"%s: %s @ %s ",
-			*added[dName].Ecosystem, added[dName].Name, *added[dName].Version,
-		)
-		if key.aggregateScore != -1 {
-			current += fmt.Sprintf("`Scorecard Score: %.1f`", key.aggregateScore)
+		new, old := added[dName], removed[dName]
+		if new == nil {
+			continue
 		}
-		results += current + "\n\n"
-	}
-	for _, key := range updatedSortKeys {
-		dName := key.dependencyName
-		current := fmt.Sprintf(
-			"**`" + "updated" + "`**")
+		current := addedTag()
+		if old != nil {
+			// Dependency in the added map also found in the removed map, indicating an updated one.
+			current += updatedTag()
+		}
+		current += scoreTag(key.aggregateScore)
 		current += fmt.Sprintf(
-			" %s: %s @ %s (**old**) :arrow_right: %s @ %s @ %s (**new**)",
-			*updated[dName].Ecosystem, updated[dName].Name, *updated[dName].Version,
-			*removed[dName].Ecosystem, removed[dName].Name, *removed[dName].Version,
+			" %s @ %s (new) ",
+			new.Name, *new.Version,
 		)
-		if key.aggregateScore != -1 {
-			current += fmt.Sprintf("`Scorecard Score: %.1f`", key.aggregateScore)
+		if old != nil {
+			current += fmt.Sprintf(
+				" ~~%s @ %s (removed)~~ ",
+				old.Name, *old.Version,
+			)
 		}
 		results += current + "\n\n"
 	}
 	for _, key := range removedSortKeys {
 		dName := key.dependencyName
-		if _, ok := updated[dName]; !ok {
-			current := fmt.Sprintf(
-				"~~**`"+"removed"+"`**~~"+" %s: %s @ %s",
-				*removed[dName].Ecosystem, removed[dName].Name, *removed[dName].Version,
-			)
-			if key.aggregateScore != -1 {
-				current += fmt.Sprintf("`Scorecard Score: %.1f`", key.aggregateScore)
-			}
-			results += current + "\n\n"
+		new, old := added[dName], removed[dName]
+		if old == nil || new != nil {
+			// Skip updated ones.
+			continue
 		}
+		current := removedTag()
+		current += scoreTag(key.aggregateScore)
+		current += fmt.Sprintf(
+			" ~~%s @ %s~~ ",
+			old.Name, *old.Version,
+		)
+		results += current + "\n\n"
 	}
-	return results, nil
+	return &results, nil
 }
 
-func getDependencySortKeys(depCheckResults map[string]*pkg.DependencyCheckResult) ([]scoreAndDependencyName, error) {
+func getDependencySortKeys(dcMap map[string]*pkg.DependencyCheckResult) ([]scoreAndDependencyName, error) {
 	checkDocs, err := docs.Read()
 	if err != nil {
 		return nil, fmt.Errorf("error getting the check docs: %w", err)
 	}
 	sortKeys := []scoreAndDependencyName{}
-	for _, dc := range depCheckResults {
-		score := float64(-1)
-		if dc.ScorecardResultsWithError.ScorecardResults != nil {
-			aggregated, err := dc.ScorecardResultsWithError.ScorecardResults.GetAggregateScore(checkDocs)
-			if err != nil {
-				continue // We still want aggregate scores of other dependencies.
+	for _, v := range dcMap {
+		score := float64(checker.InconclusiveResultScore)
+		if v.ScorecardResultsWithError.ScorecardResults != nil {
+			aggregated, err := v.ScorecardResultsWithError.ScorecardResults.GetAggregateScore(checkDocs)
+			if err == nil {
+				score = aggregated
 			}
-			score = aggregated
+			// Don't return the err immediately since we still want aggregate scores of other dependencies.
 		}
 		sortKeys = append(sortKeys, scoreAndDependencyName{
 			aggregateScore: score,
-			dependencyName: dc.Name,
+			dependencyName: v.Name,
 		})
 	}
 	return sortKeys, nil
+}
+
+func addedTag() string {
+	return fmt.Sprintf("**`" + "added" + "`**")
+}
+
+func updatedTag() string {
+	return fmt.Sprintf("**`" + "updated" + "`**")
+}
+
+func removedTag() string {
+	return fmt.Sprintf("~~**`" + "removed" + "`**~~")
+}
+
+func scoreTag(score float64) string {
+	switch score {
+	case float64(checker.InconclusiveResultScore):
+		return fmt.Sprintf("`Scorecard Score: N/A`")
+	default:
+		return fmt.Sprintf("`Scorecard Score: %.1f`", score)
+	}
 }
