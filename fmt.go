@@ -46,7 +46,7 @@ func SprintDependencyChecksToMarkdown(dChecks []pkg.DependencyCheckResult) (stri
 			// so we need to find them out manually by checking the added/removed maps.
 		}
 	}
-	for dName, _ := range added {
+	for dName := range added {
 		if removed[dName] != nil {
 			// If the dependency check result in the added map is also in the removed map
 			// (removing the old version and adding the new version), move it to the updated map.
