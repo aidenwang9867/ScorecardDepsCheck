@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"path"
 
 	"github.com/aidenwang9867/depdiffvis/pkg"
+	"github.com/ossf/scorecard/v4/checker"
 	"github.com/ossf/scorecard/v4/checks"
 	"github.com/ossf/scorecard/v4/clients"
-	"github.com/ossf/scorecard/v4/clients/githubrepo"
+	sce "github.com/ossf/scorecard/v4/errors"
 	"github.com/ossf/scorecard/v4/log"
 	scpkg "github.com/ossf/scorecard/v4/pkg"
 	"github.com/ossf/scorecard/v4/policy"
@@ -54,8 +54,6 @@ func GetDependencyDiffResults(
 		return nil, fmt.Errorf("error in fetchRawDependencyDiffData: %w", err)
 	}
 
-	// Initialize the repo and client(s) corresponding to the checks to run.
-	err = initRepoAndClientByChecks(&dCtx)
 	if err != nil {
 		return nil, fmt.Errorf("error in initRepoAndClientByChecks: %w", err)
 	}
@@ -66,28 +64,28 @@ func GetDependencyDiffResults(
 	return dCtx.results, nil
 }
 
-func initRepoAndClientByChecks(dCtx *dependencydiffContext) error {
-	// Create the repo and the corresponding client if its check needs to run.
-	ghRepo, err := githubrepo.MakeGithubRepo(path.Join(dCtx.ownerName, dCtx.repoName))
+func initRepoAndClientByChecks(dCtx *dependencydiffContext, dSrcRepo string) error {
+	repo, repoClient, ossFuzzClient, ciiClient, vulnsClient, err := checker.GetClients(
+		dCtx.ctx, dSrcRepo, "", dCtx.logger,
+	)
 	if err != nil {
-		return fmt.Errorf("error creating the github repo: %w", err)
+		return fmt.Errorf("error getting the github repo and clients: %w", err)
 	}
-	dCtx.ghRepo = ghRepo
-	dCtx.ghRepoClient = githubrepo.CreateGithubRepoClient(dCtx.ctx, dCtx.logger)
-	// Initialize these three clients as nil at first.
-	var ossFuzzClient clients.RepoClient
+	dCtx.ghRepo = repo
+	dCtx.ghRepoClient = repoClient
+	// If the caller doesn't specify the checks to run, run all the checks and return all the clients.
+	if dCtx.checkNamesToRun == nil || len(dCtx.checkNamesToRun) == 0 {
+		dCtx.ossFuzzClient, dCtx.ciiClient, dCtx.vulnsClient = ossFuzzClient, ciiClient, vulnsClient
+		return nil
+	}
 	for _, cn := range dCtx.checkNamesToRun {
 		switch cn {
 		case checks.CheckFuzzing:
-			ossFuzzClient, err = githubrepo.CreateOssFuzzRepoClient(dCtx.ctx, dCtx.logger)
-			if err != nil {
-				return fmt.Errorf("error initializing the oss fuzz repo client: %w", err)
-			}
 			dCtx.ossFuzzClient = ossFuzzClient
-		case checks.CheckVulnerabilities:
-			dCtx.vulnsClient = clients.DefaultVulnerabilitiesClient()
 		case checks.CheckCIIBestPractices:
-			dCtx.ciiClient = clients.DefaultCIIBestPracticesClient()
+			dCtx.ciiClient = ciiClient
+		case checks.CheckVulnerabilities:
+			dCtx.vulnsClient = vulnsClient
 		}
 	}
 	return nil
@@ -112,28 +110,37 @@ func getScorecardCheckResults(dCtx *dependencydiffContext) error {
 		// For now we skip those without source repo urls.
 		// TODO (#2063): use the BigQuery dataset to supplement null source repo URLs to fetch the Scorecard results for them.
 		if d.SourceRepository != nil && *d.SourceRepository != "" {
-			if d.ChangeType != nil && (dCtx.changeTypesToCheck[*d.ChangeType] || dCtx.changeTypesToCheck == nil) {
-				// Run scorecard on those types of dependencies that the caller would like to check.
-				// If the input map changeTypesToCheck is empty, by default, we run checks for all valid types.
-				// TODO (#2064): use the Scorecare REST API to retrieve the Scorecard result statelessly.
-				scorecardResult, err := scpkg.RunScorecards(
-					dCtx.ctx,
-					dCtx.ghRepo,
-					// TODO (#2065): In future versions, ideally, this should be
-					// the commitSHA corresponding to d.Version instead of HEAD.
-					clients.HeadSHA,
-					checksToRun,
-					dCtx.ghRepoClient,
-					dCtx.ossFuzzClient,
-					dCtx.ciiClient,
-					dCtx.vulnsClient,
-				)
-				// If the run fails, we leave the current dependency scorecard result empty and record the error
-				// rather than letting the entire API return nil since we still expect results for other dependencies.
-				if err != nil {
-					depCheckResult.ScorecardResultsWithError.Error = fmt.Errorf("error running the scorecard checks: %w", err)
-				} else { // Otherwise, we record the scorecard check results for this dependency.
-					depCheckResult.ScorecardResultsWithError.ScorecardResults = &scorecardResult
+			if d.ChangeType != nil {
+				if dCtx.changeTypesToCheck[*d.ChangeType] || dCtx.changeTypesToCheck == nil || len(dCtx.changeTypesToCheck) == 0 {
+					// Initialize the repo and client(s) corresponding to the checks to run.
+					// If no types have been specified, run checks on all types.
+					err = initRepoAndClientByChecks(dCtx, *d.SourceRepository)
+					if err != nil {
+						return fmt.Errorf("error initializing repo and clients: %w", err)
+					}
+					// Run scorecard on those types of dependencies that the caller would like to check.
+					// If the input map changeTypesToCheck is empty, by default, we run the checks for all valid types.
+					// TODO (#2064): use the Scorecare REST API to retrieve the Scorecard result statelessly.
+					scorecardResult, err := scpkg.RunScorecards(
+						dCtx.ctx,
+						dCtx.ghRepo,
+						// TODO (#2065): In future versions, ideally, this should be
+						// the commitSHA corresponding to d.Version instead of HEAD.
+						clients.HeadSHA,
+						checksToRun,
+						dCtx.ghRepoClient,
+						dCtx.ossFuzzClient,
+						dCtx.ciiClient,
+						dCtx.vulnsClient,
+					)
+					// If the run fails, we leave the current dependency scorecard result empty and record the error
+					// rather than letting the entire API return nil since we still expect results for other dependencies.
+					if err != nil {
+						depCheckResult.ScorecardResultsWithError.Error = sce.WithMessage(sce.ErrScorecardInternal,
+							fmt.Sprintf("error running the scorecard checks: %v", err))
+					} else { // Otherwise, we record the scorecard check results for this dependency.
+						depCheckResult.ScorecardResultsWithError.ScorecardResults = &scorecardResult
+					}
 				}
 			}
 		}

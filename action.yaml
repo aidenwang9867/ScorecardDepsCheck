@@ -1,0 +1,35 @@
+# action.yaml
+name: "Dependency-diff Visualization in Scorecard action"
+description: "Expose Scorecard checks to dependencies-in-transit in a Github pull request."
+author: "Aiden Wang - github.com/aidenwang9867"
+
+inputs:
+  owner_repo: 
+    description: "The owner and repository name."
+    required: false
+    default: ${{ github.repository }}
+  base:
+    description: "The Github revision/SHA of a base commit."
+    required: false
+    default: "main"
+  head:
+    description: "The Github revision/SHA of a base commit."
+    required: false
+    default: ${{ github.event.pull_request.head.sha }}
+  access_token:
+    description: "The access token with the read permission."
+    required: false
+    default: $ {{ secrets.GITHUB_TOKEN }}
+
+outputs:
+  depdiff_md:
+    description: "The markdown string output of dependency-diffs."
+
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  args:
+    - ${{ inputs.owner_repo }}
+    - ${{ inputs.base }}
+    - ${{ inputs.head }}
+    - ${{ inputs.access_token }}

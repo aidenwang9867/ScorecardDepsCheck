@@ -5,6 +5,7 @@ go 1.18
 require (
 	cloud.google.com/go/bigquery v1.34.1
 	github.com/google/go-github/v38 v38.1.0
+	github.com/ossf/scorecard/v4 v4.4.0
 )
 
 require (
@@ -24,8 +25,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
-	github.com/google/go-github v17.0.0+incompatible // indirect
-	github.com/google/go-github/v32 v32.1.0 // indirect
 	github.com/google/go-github/v41 v41.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -40,8 +39,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/moby/buildkit v0.10.3 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
-	github.com/ossf/scorecard v1.2.0 // indirect
-	github.com/ossf/scorecard/v4 v4.4.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rhysd/actionlint v1.6.13 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect

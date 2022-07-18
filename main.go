@@ -29,7 +29,7 @@ func main() {
 	changeTypeToCheck := map[pkg.ChangeType]bool{
 		pkg.Added:   true,
 		pkg.Updated: true,
-		pkg.Removed: true,
+		// pkg.Removed: true,
 	}
 	results, err := GetDependencyDiffResults(
 		context.Background(), owner, repo, base, head, checksToRun, changeTypeToCheck,
@@ -38,11 +38,21 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	// fmt.Println(results)
 	markdown, err := SprintDependencyChecksToMarkdown(results)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(*markdown)
+	title := "# [Scorecards' Github action](https://github.com/ossf/scorecard-action) Dependency-diff Report\n\n"
+	title += fmt.Sprintf(
+		"Dependency-diffs (changes) between the BASE commit `%s` and the HEAD commit `%s`:\n\n",
+		args[2], args[3],
+	)
+	fmt.Print(title)
+	if *markdown == "" {
+		fmt.Println("No dependency changes found.")
+	} else {
+		fmt.Println(*markdown)
+	}
+	return
 }

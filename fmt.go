@@ -33,22 +33,19 @@ func PrintDependencies(deps []pkg.DependencyCheckResult) {
 
 func SprintDependencyChecksToMarkdown(dChecks []pkg.DependencyCheckResult) (*string, error) {
 	// Use maps to reduce lookup times. Use pointers as values to save space.
-	added := map[string]*pkg.DependencyCheckResult{}
-	removed := map[string]*pkg.DependencyCheckResult{}
+	added := map[string]pkg.DependencyCheckResult{}
+	removed := map[string]pkg.DependencyCheckResult{}
 	for _, d := range dChecks {
 		if d.ChangeType != nil {
 			switch *d.ChangeType {
 			case pkg.Added:
-				added[d.Name] = &d
+				added[d.Name] = d
 			case pkg.Removed:
-				removed[d.Name] = &d
+				removed[d.Name] = d
 			}
 			// The current data source GitHub Dependency Review won't give the updated dependencies,
 			// so we need to find them manually by checking the added/removed maps.
 		}
-	}
-	for k, v := range added {
-		fmt.Println(k, v)
 	}
 	// Sort dependencies by their aggregate scores in descending orders.
 	addedSortKeys, err := getDependencySortKeys(added)
@@ -59,7 +56,6 @@ func SprintDependencyChecksToMarkdown(dChecks []pkg.DependencyCheckResult) (*str
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(addedSortKeys, removedSortKeys)
 	sort.SliceStable(
 		addedSortKeys,
 		func(i, j int) bool { return addedSortKeys[i].aggregateScore > addedSortKeys[j].aggregateScore },
@@ -71,21 +67,21 @@ func SprintDependencyChecksToMarkdown(dChecks []pkg.DependencyCheckResult) (*str
 	results := ""
 	for _, key := range addedSortKeys {
 		dName := key.dependencyName
-		new, old := added[dName], removed[dName]
-		if new == nil {
+		if _, ok := added[dName]; !ok {
 			continue
 		}
 		current := addedTag()
-		if old != nil {
+		if _, ok := removed[dName]; ok {
 			// Dependency in the added map also found in the removed map, indicating an updated one.
 			current += updatedTag()
 		}
 		current += scoreTag(key.aggregateScore)
+		new := added[dName]
 		current += fmt.Sprintf(
 			"%s @ %s (new) ",
 			new.Name, *new.Version,
 		)
-		if old != nil {
+		if old, ok := removed[dName]; ok {
 			current += fmt.Sprintf(
 				"~~%s @ %s (removed)~~ ",
 				old.Name, *old.Version,
@@ -95,13 +91,16 @@ func SprintDependencyChecksToMarkdown(dChecks []pkg.DependencyCheckResult) (*str
 	}
 	for _, key := range removedSortKeys {
 		dName := key.dependencyName
-		new, old := added[dName], removed[dName]
-		if old == nil || new != nil {
+		if _, ok := added[dName]; ok {
 			// Skip updated ones.
+			continue
+		}
+		if _, ok := removed[dName]; !ok {
 			continue
 		}
 		current := removedTag()
 		current += scoreTag(key.aggregateScore)
+		old := removed[dName]
 		current += fmt.Sprintf(
 			"~~%s @ %s~~ ",
 			old.Name, *old.Version,
@@ -111,14 +110,13 @@ func SprintDependencyChecksToMarkdown(dChecks []pkg.DependencyCheckResult) (*str
 	return &results, nil
 }
 
-func getDependencySortKeys(dcMap map[string]*pkg.DependencyCheckResult) ([]scoreAndDependencyName, error) {
+func getDependencySortKeys(dcMap map[string]pkg.DependencyCheckResult) ([]scoreAndDependencyName, error) {
 	checkDocs, err := docs.Read()
 	if err != nil {
 		return nil, fmt.Errorf("error getting the check docs: %w", err)
 	}
 	sortKeys := []scoreAndDependencyName{}
 	for k := range dcMap {
-		// fmt.Println(dcMap[k])
 		score := float64(checker.InconclusiveResultScore)
 		if dcMap[k].ScorecardResultsWithError.ScorecardResults != nil {
 			aggregated, err := dcMap[k].ScorecardResultsWithError.ScorecardResults.GetAggregateScore(checkDocs)
@@ -136,7 +134,7 @@ func getDependencySortKeys(dcMap map[string]*pkg.DependencyCheckResult) ([]score
 }
 
 func addedTag() string {
-	return fmt.Sprintf("**`" + "added" + "`** ")
+	return fmt.Sprintf(":sparkles: **`" + "added" + "`** ")
 }
 
 func updatedTag() string {
@@ -150,7 +148,7 @@ func removedTag() string {
 func scoreTag(score float64) string {
 	switch score {
 	case float64(checker.InconclusiveResultScore):
-		return fmt.Sprintf("`Scorecard Score: N/A` ")
+		return ""
 	default:
 		return fmt.Sprintf("`Scorecard Score: %.1f` ", score)
 	}
