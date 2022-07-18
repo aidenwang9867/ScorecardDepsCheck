@@ -1,4 +1,4 @@
-module github.com/aidenwang9867/DependencyDiffVisualizationInAction
+module github.com/aidenwang9867/depdiffvis
 
 go 1.18
 
