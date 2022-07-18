@@ -19,7 +19,7 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/aidenwang9867/DependencyDiffVisualizationInAction/pkg"
+	"github.com/aidenwang9867/depdiffvis/pkg"
 	"github.com/google/go-github/v38/github"
 
 	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"

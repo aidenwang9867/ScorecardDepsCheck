@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/aidenwang9867/DependencyDiffVisualizationInAction/pkg"
+	"github.com/aidenwang9867/depdiffvis/pkg"
 	docs "github.com/ossf/scorecard/v4/docs/checks"
 )
 

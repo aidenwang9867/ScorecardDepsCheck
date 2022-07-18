@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/aidenwang9867/DependencyDiffVisualizationInAction/pkg"
+	"github.com/aidenwang9867/depdiffvis/pkg"
 	"github.com/ossf/scorecard/v4/checks"
 	"github.com/ossf/scorecard/v4/clients"
 	"github.com/ossf/scorecard/v4/clients/githubrepo"
