@@ -15,16 +15,17 @@ func main() {
 	// (0) owner name, (1) repo name,
 	// (2) base commit SHA, (3) head commit SHA.
 	args := os.Args[1:]
-	if len(args) != 4 {
-		fmt.Println("len of args not equals to 4")
+	if len(args) != 3 {
+		fmt.Println("len of args not equals to 3")
 		return
 	}
-	owner, repo, base, head := args[0], args[1], args[2], args[3]
+	repoURI, base, head := args[0], args[1], args[2]
 	//Fetch dependency diffs using the GitHub Dependency Review API.
 	checksToRun := []string{
 		// checks.CheckCodeReview,
 		// checks.CheckSAST,
-		checks.CheckBranchProtection,
+		// checks.CheckBranchProtection,
+		checks.CheckLicense,
 	}
 	changeTypeToCheck := map[pkg.ChangeType]bool{
 		pkg.Added:   true,
@@ -32,27 +33,28 @@ func main() {
 		// pkg.Removed: true,
 	}
 	results, err := GetDependencyDiffResults(
-		context.Background(), owner, repo, base, head, checksToRun, changeTypeToCheck,
+		context.Background(), repoURI, base, head, checksToRun, changeTypeToCheck,
 	)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	// fmt.Println(results)
 	markdown, err := SprintDependencyChecksToMarkdown(results)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	title := "# [Scorecards' Github action](https://github.com/ossf/scorecard-action) Dependency-diff Report\n\n"
-	title += fmt.Sprintf(
-		"Dependency-diffs (changes) between the BASE commit `%s` and the HEAD commit `%s`:\n\n",
-		args[2], args[3],
-	)
-	fmt.Print(title)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	// title := "# [Scorecards' Github action](https://github.com/ossf/scorecard-action) Dependency-diff Report\n\n"
+	// title += fmt.Sprintf(
+	// 	"Dependency-diffs (changes) between the BASE commit `%s` and the HEAD commit `%s`:\n\n",
+	// 	args[2], args[3],
+	// )
+	// fmt.Print(title)
 	if *markdown == "" {
 		fmt.Println("No dependency changes found.")
 	} else {
 		fmt.Println(*markdown)
 	}
-	return
+	// return
 }

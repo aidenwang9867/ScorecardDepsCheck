@@ -118,8 +118,8 @@ func getDependencySortKeys(dcMap map[string]pkg.DependencyCheckResult) ([]scoreA
 	sortKeys := []scoreAndDependencyName{}
 	for k := range dcMap {
 		score := float64(checker.InconclusiveResultScore)
-		if dcMap[k].ScorecardResultsWithError.ScorecardResults != nil {
-			aggregated, err := dcMap[k].ScorecardResultsWithError.ScorecardResults.GetAggregateScore(checkDocs)
+		if dcMap[k].ScorecardResultWithError.ScorecardResult != nil {
+			aggregated, err := dcMap[k].ScorecardResultWithError.ScorecardResult.GetAggregateScore(checkDocs)
 			if err == nil {
 				score = aggregated
 			}

@@ -3,7 +3,7 @@ name: "Dependency-diff Visualization in Scorecard action"
 description: "Expose Scorecard checks to dependencies-in-transit in a Github pull request."
 author: "Aiden Wang - github.com/aidenwang9867"
 
-inputs:
+inputs: 
   owner_repo: 
     description: "The owner and repository name."
     required: false
@@ -20,6 +20,16 @@ inputs:
     description: "The access token with the read permission."
     required: false
     default: $ {{ secrets.GITHUB_TOKEN }}
+  checks_to_run:
+    description: "The scorecard checks to run on the dependencies."
+    required: false
+    default: []
+  change_types_to_run:
+    description: "The scorecard checks to run on the dependencies."
+    required: false
+    default: ["added", "updated", "removed"]
+
+
 
 outputs:
   depdiff_md:
@@ -28,8 +38,4 @@ outputs:
 runs:
   using: "docker"
   image: "Dockerfile"
-  args:
-    - ${{ inputs.owner_repo }}
-    - ${{ inputs.base }}
-    - ${{ inputs.head }}
-    - ${{ inputs.access_token }}
+
