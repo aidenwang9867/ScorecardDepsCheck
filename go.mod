@@ -4,8 +4,10 @@ go 1.18
 
 require (
 	cloud.google.com/go/bigquery v1.34.1
+	github.com/caarlos0/env/v6 v6.9.3
 	github.com/google/go-github/v38 v38.1.0
 	github.com/ossf/scorecard/v4 v4.4.0
+	github.com/spf13/cobra v1.4.0
 )
 
 require (
@@ -15,7 +17,6 @@ require (
 	cloud.google.com/go/storage v1.22.1 // indirect
 	github.com/bombsimon/logrusr/v2 v2.0.1 // indirect
 	github.com/bradleyfalzon/ghinstallation/v2 v2.0.4 // indirect
-	github.com/caarlos0/env/v6 v6.9.3 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/fatih/color v1.13.0 // indirect
@@ -46,7 +47,6 @@ require (
 	github.com/shurcooL/githubv4 v0.0.0-20201206200315-234843c633fa // indirect
 	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/spf13/cobra v1.4.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	gocloud.dev v0.25.0 // indirect

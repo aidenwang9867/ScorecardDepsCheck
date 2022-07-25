@@ -1,11 +1,12 @@
 package pkg
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
+	"os"
 
-	sce "github.com/ossf/scorecard/v4/errors"
+	"github.com/ossf/scorecard/v4/docs/checks"
+	"github.com/ossf/scorecard/v4/log"
+	"github.com/ossf/scorecard/v4/options"
 	scpkg "github.com/ossf/scorecard/v4/pkg"
 )
 
@@ -22,8 +23,8 @@ const (
 )
 
 // IsValid determines if a ChangeType is valid.
-func (ct ChangeType) IsValid() bool {
-	switch ct {
+func (ct *ChangeType) IsValid() bool {
+	switch *ct {
 	case Added, Updated, Removed:
 		return true
 	default:
@@ -31,9 +32,10 @@ func (ct ChangeType) IsValid() bool {
 	}
 }
 
-// ScorecardResultWithError is used for the dependency-diff module to record the scorecard result and the error.
+// ScorecardResultWithError is used for the dependency-diff module to record the scorecard result
+// and a potential error field if the Scorecard run fails.
 type ScorecardResultWithError struct {
-	// ScorecardResults is the scorecard result for the dependency repo.
+	// ScorecardResult is the scorecard result for the dependency repo.
 	ScorecardResult *scpkg.ScorecardResult
 
 	// Error is an error returned when running the scorecard checks. A nil Error indicates the run succeeded.
@@ -60,18 +62,22 @@ type DependencyCheckResult struct {
 	// Version is the package version of the dependency.
 	Version *string
 
-	// ScorecardResultWithError contains the scorecard checking result of the dependency
-	// and an error field to record potential failing scorecard runs.
+	// ScorecardResultWithError is the scorecard checking results of the dependency.
 	ScorecardResultWithError ScorecardResultWithError
 
 	// Name is the name of the dependency.
 	Name string
 }
 
-// AsJSON for DependencyCheckResult exports the DependencyCheckResult as a JSON object.
-func (dr *DependencyCheckResult) AsJSON(writer io.Writer) error {
-	if err := json.NewEncoder(writer).Encode(*dr); err != nil {
-		return sce.WithMessage(sce.ErrScorecardInternal, fmt.Sprintf("encoder.Encode: %v", err))
+// FormatDependencydiffResults formats dependencydiff results.
+func FormatDependencydiffResults(
+	opts *options.Options,
+	depdiffResults []DependencyCheckResult,
+	doc checks.Doc,
+) error {
+	err := DependencydiffResultsAsJSON(depdiffResults, log.ParseLevel(opts.LogLevel), doc, os.Stdout)
+	if err != nil {
+		return fmt.Errorf("failed to output dependencydiff results: %w", err)
 	}
 	return nil
 }
