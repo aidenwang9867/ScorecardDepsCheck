@@ -6,7 +6,7 @@ import (
 	"io"
 
 	sce "github.com/ossf/scorecard/v4/errors"
-	"github.com/ossf/scorecard/v4/pkg"
+	scpkg "github.com/ossf/scorecard/v4/pkg"
 )
 
 // ChangeType is the change type (added, updated, removed) of a dependency.
@@ -34,7 +34,7 @@ func (ct ChangeType) IsValid() bool {
 // ScorecardResultWithError is used for the dependency-diff module to record the scorecard result and the error.
 type ScorecardResultWithError struct {
 	// ScorecardResults is the scorecard result for the dependency repo.
-	ScorecardResult *pkg.ScorecardResult
+	ScorecardResult *scpkg.ScorecardResult
 
 	// Error is an error returned when running the scorecard checks. A nil Error indicates the run succeeded.
 	Error error
